@@ -1,0 +1,30 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('From Git') {
+            steps {
+                sh '''
+                    echo "Pipeline running from Git repo"
+                    echo "User:"
+                    whoami
+                    echo "Hostname:"
+                    hostname
+                    echo "Date:"
+                    date
+                    echo "Workspace:"
+                    pwd
+                '''
+            }
+        }
+
+        stage('Verify') {
+            steps {
+                sh '''
+                    echo "Listing files"
+                    ls -la
+                '''
+            }
+        }
+    }
+}
