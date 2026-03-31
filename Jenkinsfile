@@ -88,14 +88,31 @@ EOF
         stage('Push Image') {
             steps {
                 sh '''
-                    echo "Pushing latest image to Docker Hub"
+                    echo "Pushing latest image"
                     sudo podman push ${IMAGE_NAME}:${IMAGE_TAG}
 
-                    echo "Pushing versioned image to Docker Hub"
+                    echo "Pushing versioned image"
                     sudo podman push ${IMAGE_NAME}:${BUILD_TAG_VERSION}
 
-                    echo "Pushing environment image to Docker Hub"
+                    echo "Pushing environment image"
                     sudo podman push ${IMAGE_NAME}:${ENV_TAG}
+                '''
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh '''
+                    echo "Deploying application for environment: ${ENV_TAG}"
+
+                    sudo podman rm -f my-app || true
+
+                    sudo podman run -d --name my-app ${IMAGE_NAME}:${ENV_TAG}
+
+                    echo "Deployment complete"
+
+                    echo "Checking running containers"
+                    sudo podman ps
                 '''
             }
         }
