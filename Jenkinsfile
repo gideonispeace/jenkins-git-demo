@@ -27,12 +27,35 @@ pipeline {
                 '''
             }
         }
-         stage('Docker Test') {
-             steps {
-                 sh '''
-                 echo "Running Docker container test"
-                 sudo docker run hello-world
-                 '''
+
+        stage('Docker Test') {
+            steps {
+                sh '''
+                    echo "Running Docker container test"
+                    sudo docker run hello-world
+                '''
+            }
+        }
+
+        stage('Build Image') {
+            steps {
+                sh '''
+                    echo "Building custom image"
+                    cat > Dockerfile <<EOF
+                    FROM alpine:latest
+                    CMD ["echo", "Hello from my custom Jenkins image"]
+                    EOF
+                    sudo podman build -t my-custom-app .
+                '''
+            }
+        }
+
+        stage('Run Custom Container') {
+            steps {
+                sh '''
+                    echo "Running custom container"
+                    sudo podman run --rm my-custom-app
+                '''
             }
         }
     }
