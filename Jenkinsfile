@@ -4,6 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = 'gannex/my-custom-app'
         IMAGE_TAG = 'latest'
+        BUILD_TAG_VERSION = "${BUILD_NUMBER}"
     }
 
     stages {
@@ -53,6 +54,7 @@ CMD ["echo", "Hello from my custom Jenkins image"]
 EOF
 
                     sudo podman build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                    sudo podman tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:${BUILD_TAG_VERSION}
                 '''
             }
         }
@@ -80,8 +82,11 @@ EOF
         stage('Push Image') {
             steps {
                 sh '''
-                    echo "Pushing image to Docker Hub"
+                    echo "Pushing latest image to Docker Hub"
                     sudo podman push ${IMAGE_NAME}:${IMAGE_TAG}
+
+                    echo "Pushing versioned image to Docker Hub"
+                    sudo podman push ${IMAGE_NAME}:${BUILD_TAG_VERSION}
                 '''
             }
         }
