@@ -23,6 +23,7 @@ pipeline {
                 sh '''
                     echo "Listing files"
                     ls -la
+                    echo "Polling test successful"
                 '''
             }
         }
