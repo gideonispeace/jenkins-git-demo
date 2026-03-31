@@ -31,7 +31,7 @@ pipeline {
              steps {
                  sh '''
                  echo "Running Docker container test"
-                 docker run hello-world
+                 sudo docker run hello-world
                  '''
             }
         }
