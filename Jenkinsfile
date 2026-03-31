@@ -41,11 +41,13 @@ pipeline {
             steps {
                 sh '''
                     echo "Building custom image"
-                    cat > Dockerfile <<EOF
-                    FROM alpine:latest
-                    CMD ["echo", "Hello from my custom Jenkins image"]
-                    EOF
-                    sudo podman build -t my-custom-app .
+
+cat > Dockerfile <<EOF
+FROM alpine:latest
+CMD ["echo", "Hello from my custom Jenkins image"]
+EOF
+
+                    sudo podman build -t localhost/my-custom-app:latest .
                 '''
             }
         }
@@ -54,7 +56,7 @@ pipeline {
             steps {
                 sh '''
                     echo "Running custom container"
-                    sudo podman run --rm my-custom-app
+                    sudo podman run --rm localhost/my-custom-app:latest
                 '''
             }
         }
