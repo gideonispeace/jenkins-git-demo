@@ -27,5 +27,13 @@ pipeline {
                 '''
             }
         }
+         stage('Docker Test') {
+             steps {
+                 sh '''
+                 echo "Running Docker container test"
+                 docker run hello-world
+                 '''
+            }
+        }
     }
 }
