@@ -57,7 +57,7 @@ pipeline {
 
 cat > Dockerfile <<EOF
 FROM alpine:latest
-CMD ["echo", "Hello from my custom Jenkins image"]
+CMD ["sh", "-c", "while true; do echo Application running; sleep 60; done"]
 EOF
 
                     sudo podman build -t ${IMAGE_NAME}:${IMAGE_TAG} .
@@ -71,7 +71,7 @@ EOF
             steps {
                 sh '''
                     echo "Running custom container validation"
-                    sudo podman run --rm ${IMAGE_NAME}:${IMAGE_TAG}
+                    sudo podman run --rm --entrypoint /bin/sh ${IMAGE_NAME}:${IMAGE_TAG} -c "echo Validation successful"
                 '''
             }
         }
@@ -112,7 +112,11 @@ EOF
                     sudo podman run -d --name ${CONTAINER_NAME} ${IMAGE_NAME}:${ENV_TAG}
 
                     echo "Deployment complete"
+                    echo "Checking running containers"
                     sudo podman ps
+
+                    echo "Checking container logs"
+                    sudo podman logs ${CONTAINER_NAME} | head -5 || true
                 '''
             }
         }
