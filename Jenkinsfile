@@ -7,7 +7,6 @@ pipeline {
 
     options {
         disableConcurrentBuilds()
-        timestamps()
         buildDiscarder(logRotator(numToKeepStr: '10'))
     }
 
@@ -24,13 +23,9 @@ pipeline {
             steps {
                 sh '''
                     echo "Pipeline running from Git repo"
-                    echo "User:"
                     whoami
-                    echo "Hostname:"
                     hostname
-                    echo "Date:"
                     date
-                    echo "Workspace:"
                     pwd
                 '''
             }
@@ -117,7 +112,6 @@ EOF
                     sudo podman run -d --name ${CONTAINER_NAME} ${IMAGE_NAME}:${ENV_TAG}
 
                     echo "Deployment complete"
-                    echo "Checking running containers"
                     sudo podman ps
                 '''
             }
@@ -128,9 +122,6 @@ EOF
         success {
             sh '''
                 echo "Pipeline completed successfully"
-                echo "Image pushed: ${IMAGE_NAME}:${IMAGE_TAG}"
-                echo "Image pushed: ${IMAGE_NAME}:${BUILD_TAG_VERSION}"
-                echo "Image pushed: ${IMAGE_NAME}:${ENV_TAG}"
                 echo "Deployed container: ${CONTAINER_NAME}"
             '''
         }
@@ -138,14 +129,12 @@ EOF
         failure {
             sh '''
                 echo "Pipeline failed"
-                echo "Review the failed stage in Jenkins console output"
             '''
         }
 
         always {
             sh '''
                 echo "Pipeline finished"
-                echo "Current local images:"
                 sudo podman images | head -10 || true
             '''
         }
