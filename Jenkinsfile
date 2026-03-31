@@ -5,15 +5,22 @@ pipeline {
         choice(name: 'DEPLOY_ENV', choices: ['dev', 'test', 'prod'], description: 'Target environment tag')
     }
 
+    options {
+        disableConcurrentBuilds()
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
     environment {
         IMAGE_NAME = 'gannex/my-custom-app'
         IMAGE_TAG = 'latest'
         BUILD_TAG_VERSION = "${BUILD_NUMBER}"
         ENV_TAG = "${params.DEPLOY_ENV}"
+        CONTAINER_NAME = "my-app-${params.DEPLOY_ENV}"
     }
 
     stages {
-        stage('From Git') {
+        stage('Source Validation') {
             steps {
                 sh '''
                     echo "Pipeline running from Git repo"
@@ -29,7 +36,7 @@ pipeline {
             }
         }
 
-        stage('Verify') {
+        stage('Workspace Verification') {
             steps {
                 sh '''
                     echo "Listing files"
@@ -39,7 +46,7 @@ pipeline {
             }
         }
 
-        stage('Docker Test') {
+        stage('Container Runtime Test') {
             steps {
                 sh '''
                     echo "Running Docker container test"
@@ -65,16 +72,16 @@ EOF
             }
         }
 
-        stage('Run Custom Container') {
+        stage('Run Image Validation') {
             steps {
                 sh '''
-                    echo "Running custom container"
+                    echo "Running custom container validation"
                     sudo podman run --rm ${IMAGE_NAME}:${IMAGE_TAG}
                 '''
             }
         }
 
-        stage('Docker Hub Login') {
+        stage('Registry Login') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh '''
@@ -85,7 +92,7 @@ EOF
             }
         }
 
-        stage('Push Image') {
+        stage('Push Images') {
             steps {
                 sh '''
                     echo "Pushing latest image"
@@ -105,16 +112,42 @@ EOF
                 sh '''
                     echo "Deploying application for environment: ${ENV_TAG}"
 
-                    sudo podman rm -f my-app || true
+                    sudo podman rm -f ${CONTAINER_NAME} || true
 
-                    sudo podman run -d --name my-app ${IMAGE_NAME}:${ENV_TAG}
+                    sudo podman run -d --name ${CONTAINER_NAME} ${IMAGE_NAME}:${ENV_TAG}
 
                     echo "Deployment complete"
-
                     echo "Checking running containers"
                     sudo podman ps
                 '''
             }
+        }
+    }
+
+    post {
+        success {
+            sh '''
+                echo "Pipeline completed successfully"
+                echo "Image pushed: ${IMAGE_NAME}:${IMAGE_TAG}"
+                echo "Image pushed: ${IMAGE_NAME}:${BUILD_TAG_VERSION}"
+                echo "Image pushed: ${IMAGE_NAME}:${ENV_TAG}"
+                echo "Deployed container: ${CONTAINER_NAME}"
+            '''
+        }
+
+        failure {
+            sh '''
+                echo "Pipeline failed"
+                echo "Review the failed stage in Jenkins console output"
+            '''
+        }
+
+        always {
+            sh '''
+                echo "Pipeline finished"
+                echo "Current local images:"
+                sudo podman images | head -10 || true
+            '''
         }
     }
 }
