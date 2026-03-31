@@ -1,10 +1,15 @@
 pipeline {
     agent any
 
+    parameters {
+        choice(name: 'DEPLOY_ENV', choices: ['dev', 'test', 'prod'], description: 'Target environment tag')
+    }
+
     environment {
         IMAGE_NAME = 'gannex/my-custom-app'
         IMAGE_TAG = 'latest'
         BUILD_TAG_VERSION = "${BUILD_NUMBER}"
+        ENV_TAG = "${params.DEPLOY_ENV}"
     }
 
     stages {
@@ -55,6 +60,7 @@ EOF
 
                     sudo podman build -t ${IMAGE_NAME}:${IMAGE_TAG} .
                     sudo podman tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:${BUILD_TAG_VERSION}
+                    sudo podman tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:${ENV_TAG}
                 '''
             }
         }
@@ -87,6 +93,9 @@ EOF
 
                     echo "Pushing versioned image to Docker Hub"
                     sudo podman push ${IMAGE_NAME}:${BUILD_TAG_VERSION}
+
+                    echo "Pushing environment image to Docker Hub"
+                    sudo podman push ${IMAGE_NAME}:${ENV_TAG}
                 '''
             }
         }
